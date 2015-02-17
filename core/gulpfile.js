@@ -11,6 +11,7 @@ var debug     = require('gulp-debug');
 var stripCssComments = require('gulp-strip-css-comments');
 var stripJsComments = require('gulp-strip-comments');
 var header = require('gulp-header');
+var runSequence = require('run-sequence');
 var rootPath  = Path.join(__dirname, "/src/main/web/app/");
 var buildPath = Path.join(__dirname, "/src/main/web/app/dist");
 var tempPath = Path.join(__dirname, "/src/main/web/app/temp");
@@ -92,7 +93,7 @@ var jslist = [
 ];
 
 var bkjslist = [
-  "src/main/web/app/dist/templates.js",
+  "src/main/web/app/temp/templates.js",
   "src/main/web/app/controlpanel/controlpanel.js",
   "src/main/web/app/controlpanel/controlpanel-directive.js",
   "src/main/web/app/controlpanel/controlpanelsessionitem-directive.js",
@@ -202,7 +203,7 @@ function handleError(e) {
 }
 
 gulp.task("buildSingleCss", function() {
-  gulp.src(csslist)
+  return gulp.src(csslist)
   .pipe(stripCssComments())
   .pipe(concat('beakerApp.css'))
   .pipe(header(banner ))
@@ -210,13 +211,13 @@ gulp.task("buildSingleCss", function() {
 });
 
 gulp.task("buildSingleVendorJs", function() {
-  gulp.src(jslist)
+  return gulp.src(jslist)
   .pipe(concat('beakerVendor.js'))
   .pipe(gulp.dest(buildPath));
 });
 
 gulp.task("buildSingleBeakerJs", function() {
-  gulp.src(bkjslist)
+  return gulp.src(bkjslist)
   .pipe(stripJsComments())
   .pipe(concat('beakerApp.js'))
   .pipe(header(banner ))
@@ -224,7 +225,7 @@ gulp.task("buildSingleBeakerJs", function() {
 });
 
 gulp.task("buildSingleOutDispCss", function() {
-  gulp.src(outdispcsslist)
+  return gulp.src(outdispcsslist)
   .pipe(stripCssComments())
   .pipe(concat('beakerOutDisp.css'))
   .pipe(header(banner ))
@@ -232,14 +233,14 @@ gulp.task("buildSingleOutDispCss", function() {
 });
 
 gulp.task("buildSingleOutDispJs", function() {
-  gulp.src(outdispjslist)
+  return gulp.src(outdispjslist)
   .pipe(concat('beakerOutDisp.js'))
   .pipe(header(banner ))
   .pipe(gulp.dest(buildPath));
 });
 
 gulp.task("compileBeakerScss", function() {
-  gulp.src(Path.join(rootPath, "**.scss"))
+  return gulp.src(Path.join(rootPath, "**.scss"))
   .pipe(sass().on('error', handleError))
   .pipe(importCss())
   .pipe(stripCssComments())
@@ -248,7 +249,7 @@ gulp.task("compileBeakerScss", function() {
 });
 
 gulp.task("compileBeakerTemplates", function() {
-  gulp.src(rootPath+ "/**/*.jst.html")
+  return gulp.src(rootPath+ "/**/*.jst.html")
   .pipe(htmlClass({klass: "bkr"}))
   .pipe(htmlmin({removeComments: true}))
   .pipe(template({
@@ -257,7 +258,7 @@ gulp.task("compileBeakerTemplates", function() {
     }
   }))
   .pipe(concat('templates.js'))
-  .pipe(gulp.dest(buildPath));
+  .pipe(gulp.dest(tempPath));
 });
 
 gulp.task("watchBeakerScss", function() {
@@ -271,4 +272,12 @@ gulp.task("watchBeakerTemplates", function() {
 });
 
 gulp.task("watch", ["watchBeakerScss", "watchBeakerTemplates"]);
-gulp.task("compile", ["compileBeakerScss", "compileBeakerTemplates", "buildSingleCss", "buildSingleVendorJs", "buildSingleBeakerJs", "buildSingleOutDispCss", "buildSingleOutDispJs"]);
+gulp.task("compile", function(callback) {
+  runSequence("compileBeakerScss",
+      "compileBeakerTemplates",
+      "buildSingleCss",
+      "buildSingleVendorJs",
+      "buildSingleBeakerJs", 
+      "buildSingleOutDispCss",
+      "buildSingleOutDispJs", callback); });
+
