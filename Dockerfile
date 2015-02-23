@@ -117,3 +117,10 @@ RUN su -m beaker -c "cd /home/beaker/src  && gradle build"
 EXPOSE 8800
 WORKDIR /home/beaker/src
 CMD su -m beaker -c "export PATH=$PATH:/usr/sbin && /home/beaker/src/core/beaker.command --public-server"
+
+# Upgrade python packages
+RUN pip install pip --upgrade
+RUN pip freeze --local | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U
+
+# Install additional python packages
+RUN pip install sklearn
